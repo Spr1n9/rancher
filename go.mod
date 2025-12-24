@@ -117,7 +117,7 @@ require (
 	github.com/prometheus/client_model v0.6.2
 	github.com/rancher/aks-operator v1.13.0-rc.4
 	github.com/rancher/ali-operator v1.13.0-rc.2
-	github.com/rancher/apiserver v0.8.0
+	github.com/rancher/apiserver v0.8.1
 	github.com/rancher/channelserver v0.7.0
 	github.com/rancher/dynamiclistener v0.7.3
 	github.com/rancher/eks-operator v1.13.0-rc.4
@@ -149,7 +149,7 @@ require (
 	golang.org/x/mod v0.30.0
 	golang.org/x/net v0.47.0
 	golang.org/x/oauth2 v0.32.0
-	golang.org/x/sync v0.18.0
+	golang.org/x/sync v0.19.0
 	golang.org/x/text v0.31.0
 	google.golang.org/api v0.252.0
 	google.golang.org/grpc v1.75.1
@@ -160,7 +160,7 @@ require (
 	helm.sh/helm/v3 v3.19.0
 	k8s.io/api v0.34.2
 	k8s.io/apiextensions-apiserver v0.34.1
-	k8s.io/apimachinery v0.34.2
+	k8s.io/apimachinery v0.35.0
 	k8s.io/apiserver v0.34.1
 	k8s.io/cli-runtime v0.34.1
 	k8s.io/client-go v12.0.0+incompatible
@@ -250,7 +250,7 @@ require (
 	github.com/skeema/knownhosts v1.3.0 // indirect
 	github.com/std-uritemplate/std-uritemplate/go v0.0.57 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
-	github.com/tinylib/msgp v1.5.0 // indirect
+	github.com/tinylib/msgp v1.6.1 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
@@ -269,10 +269,10 @@ require (
 	k8s.io/gengo v0.0.0-20250130153323-76c5745d3511 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250604051438-85fd79dbfd9f // indirect
 	k8s.io/kms v0.34.1 // indirect
-	modernc.org/libc v1.66.3 // indirect
+	modernc.org/libc v1.66.10 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
-	modernc.org/sqlite v1.39.0 // indirect
+	modernc.org/sqlite v1.40.1 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
 )
@@ -411,3 +411,5 @@ require (
 	sigs.k8s.io/kustomize/api v0.20.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.20.1 // indirect
 )
+
+replace github.com/rancher/steve => github.com/Spr1n9/steve v0.0.0-20251223073432-f864bde11fcb
