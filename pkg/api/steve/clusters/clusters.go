@@ -34,6 +34,7 @@ func Register(ctx context.Context, server *steve.Server, wrangler *wrangler.Cont
 		namespace:       "cattle-system",
 		impersonator:    podimpersonation.New("shell", server.ClientFactory, time.Hour, settings.FullShellImage),
 		clusterRegistry: server.ClusterRegistry,
+		clusterCache:    wrangler.Mgmt.Cluster().Cache(),
 	}
 	sc, err := config.NewScaledContext(*wrangler.RESTConfig, nil)
 	if err != nil {

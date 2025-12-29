@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rancher/apiserver/pkg/types"
+	v3 "github.com/rancher/rancher/pkg/generated/controllers/management.cattle.io/v3"
 	"github.com/rancher/rancher/pkg/settings"
 	"github.com/rancher/steve/pkg/podimpersonation"
 	"github.com/rancher/steve/pkg/stores/proxy"
@@ -25,15 +27,25 @@ type shell struct {
 	impersonator    *podimpersonation.PodImpersonation
 	cg              proxy.ClientGetter
 	clusterRegistry string
+	clusterCache    v3.ClusterCache
 }
 
 func (s *shell) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	apiRequest := types.GetAPIContext(req.Context())
+	clusterID := apiRequest.Name
+	displayName := clusterID
+	if cluster, err := s.clusterCache.Get(clusterID); err == nil && cluster.Spec.DisplayName != "" {
+		displayName = cluster.Spec.DisplayName
+	}
+
+	req = req.WithContext(context.WithValue(req.Context(), "clusterName", displayName))
+
 	ctx, user, client, err := s.contextAndClient(req)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
+	
 	var imageOverride string
 	if s.clusterRegistry != "" {
 		imageOverride = s.clusterRegistry + "/" + settings.ShellImage.Get()
