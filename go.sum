@@ -101,8 +101,8 @@ github.com/NYTimes/gziphandler v1.1.1 h1:ZUDjpQae29j0ryrS0u/B8HZfJBtBQHjqw2rQ2cq
 github.com/NYTimes/gziphandler v1.1.1/go.mod h1:n/CVRwUEOgIxrgPvAQhUUr9oeUtvrhMomdKFjzJNB0c=
 github.com/ProtonMail/go-crypto v1.1.3 h1:nRBOetoydLeUb4nHajyO2bKqMLfWQ/ZPwkXqXxPxCFk=
 github.com/ProtonMail/go-crypto v1.1.3/go.mod h1:rA3QumHc/FZ8pAHreoekgiAbzpNsfQAosU5td4SnOrE=
-github.com/Spr1n9/steve v0.0.0-20251223073432-f864bde11fcb h1:cIdVjX6zFvmSQb0CCytV9Je4Zr0b6tl8HSxoaX6OWTo=
-github.com/Spr1n9/steve v0.0.0-20251223073432-f864bde11fcb/go.mod h1:VV2gUd3NOI57HYmBKUk6PlQBUc4qYQt6Dyj1hODUttc=
+github.com/Spr1n9/steve v0.0.0-20251229081107-c0cd316f2d49 h1:LWy9XpgOyhtgo0GRF7Bl8WxGGNXEF6pF8WnCzchycyg=
+github.com/Spr1n9/steve v0.0.0-20251229081107-c0cd316f2d49/go.mod h1:VV2gUd3NOI57HYmBKUk6PlQBUc4qYQt6Dyj1hODUttc=
 github.com/adrg/xdg v0.5.3 h1:xRnxJXne7+oWDatRhR1JLnvuccuIeCoBu2rtuLqQB78=
 github.com/adrg/xdg v0.5.3/go.mod h1:nlTsY+NNiCBGCK2tpm09vRqfVzrc2fLmXGpBLF0zlTQ=
 github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be h1:9AeTilPcZAjCFIImctFaOjnTIavg87rW78vTPkQqLI8=

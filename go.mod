@@ -412,4 +412,4 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.20.1 // indirect
 )
 
-replace github.com/rancher/steve => github.com/Spr1n9/steve latest
+replace github.com/rancher/steve => github.com/Spr1n9/steve v0.0.0-20251229081107-c0cd316f2d49
