@@ -2,6 +2,7 @@ package clusters
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/rancher/steve/pkg/podimpersonation"
 	"github.com/rancher/steve/pkg/stores/proxy"
 	"github.com/rancher/wrangler/v3/pkg/schemas/validation"
+	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/authentication/user"
@@ -45,13 +47,16 @@ func (s *shell) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	
+
 	var imageOverride string
 	if s.clusterRegistry != "" {
 		imageOverride = s.clusterRegistry + "/" + settings.ShellImage.Get()
 	}
 
-	pod, err := s.impersonator.CreatePod(ctx, user, s.createPod(imageOverride), &podimpersonation.PodOptions{
+	podInfo := s.createPod(imageOverride)
+	s.mountNFS(ctx, user, podInfo)
+
+	pod, err := s.impersonator.CreatePod(ctx, user, podInfo, &podimpersonation.PodOptions{
 		Wait:          true,
 		ImageOverride: imageOverride,
 	})
@@ -119,6 +124,43 @@ func (s *shell) contextAndClient(req *http.Request) (context.Context, user.Info,
 	}
 
 	return ctx, user, client, nil
+}
+
+func (s *shell) mountNFS(ctx context.Context, user user.Info, pod *v1.Pod) {
+	nfsDir := fmt.Sprintf("/data/nfs/k8s/%s", user.GetName())
+	nfsHostIp := settings.ShellDefaultNFSHost.Get()
+	mountDir := "/home/shell/persistent_data"
+	volumeName := "persistent-data"
+
+	if clusterName, ok := ctx.Value("clusterName").(string); ok {
+		logrus.Infof("clusterName: %s", clusterName)
+		switch clusterName {
+		case "local":
+			nfsHostIp = "10.48.1.135"
+		default:
+			nfsHostIp = settings.ShellDefaultNFSHost.Get()
+		}
+	} else {
+		logrus.Errorf("clusterName not found in context")
+		return
+	}
+
+	// 配置挂载点
+	pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts, v1.VolumeMount{
+		Name:      volumeName,
+		MountPath: mountDir,
+	})
+	// 配置挂载nfs
+	pod.Spec.Volumes = append(pod.Spec.Volumes, v1.Volume{
+		Name: volumeName,
+		VolumeSource: v1.VolumeSource{
+			NFS: &v1.NFSVolumeSource{
+				Path:   nfsDir,
+				Server: nfsHostIp,
+			},
+		},
+	})
+	return
 }
 
 func (s *shell) createPod(imageOverride string) *v1.Pod {
