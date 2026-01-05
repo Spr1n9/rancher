@@ -136,7 +136,7 @@ func (s *shell) mountNFS(ctx context.Context, user user.Info, pod *v1.Pod) {
 		logrus.Infof("clusterName: %s", clusterName)
 		switch clusterName {
 		case "local":
-			nfsHostIp = "10.48.1.135"
+			nfsHostIp = settings.ShellDefaultNFSHost.Get()
 		default:
 			nfsHostIp = settings.ShellDefaultNFSHost.Get()
 		}
