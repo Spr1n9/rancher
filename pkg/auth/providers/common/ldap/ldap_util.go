@@ -177,6 +177,12 @@ func AttributesToPrincipal(attribs []*ldapv3.EntryAttribute, dnStr, scope, provi
 		if login == "" {
 			login = accountName
 		}
+		// 将 login 作为 externalID，使得用户组织更新时能正确匹配用户
+		externalID = login
+		if externalID == "" {
+			externalID = dnStr
+		}
+
 		kind = "user"
 	} else if IsType(attribs, groupObjectClass) {
 		for _, attr := range attribs {
