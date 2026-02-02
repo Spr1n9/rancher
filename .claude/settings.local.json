@@ -3,7 +3,9 @@
     "allow": [
       "Bash(kubectl get:*)",
       "Bash(go doc:*)",
-      "Bash(go test:*)"
+      "Bash(go test:*)",
+      "Bash(go build:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }

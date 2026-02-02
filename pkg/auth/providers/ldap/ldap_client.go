@@ -266,22 +266,27 @@ func (p *ldapProvider) getPrincipal(distinguishedName string, scope string, conf
 		return nil, fmt.Errorf("invalid scope")
 	}
 
+	// 检测 distinguishedName 是完整 DN 还是简单的 login
+	// 尝试解析 DN，如果失败则认为是 login
+	isSimpleLogin := false
 	var attribs []*ldapv3.EntryAttribute
 	object, err := ldapv3.ParseDN(distinguishedName)
 	if err != nil {
-		return nil, err
-	}
-
-	for _, rdns := range object.RDNs {
-		for _, attr := range rdns.Attributes {
-			entryAttr := ldapv3.NewEntryAttribute(attr.Type, []string{attr.Value})
-			attribs = append(attribs, entryAttr)
+		// 解析失败，说明这是一个简单的 login（如 "wanglei"），而不是完整的 DN
+		isSimpleLogin = true
+	} else {
+		// 成功解析 DN，提取属性用于类型检查
+		for _, rdns := range object.RDNs {
+			for _, attr := range rdns.Attributes {
+				entryAttr := ldapv3.NewEntryAttribute(attr.Type, []string{attr.Value})
+				attribs = append(attribs, entryAttr)
+			}
 		}
-	}
 
-	if !ldap.IsType(attribs, scope) && !p.permissionCheck(attribs, config) {
-		logrus.Errorf("Failed to get object %s", distinguishedName)
-		return nil, nil
+		if !ldap.IsType(attribs, scope) && !p.permissionCheck(attribs, config) {
+			logrus.Errorf("Failed to get object %s", distinguishedName)
+			return nil, nil
+		}
 	}
 
 	entityType := strings.Split(scope, "_")[1]
@@ -330,11 +335,49 @@ func (p *ldapProvider) getPrincipal(distinguishedName string, scope string, conf
 		attrs = config.GetGroupSearchAttributes(ObjectClass)
 	}
 
-	search = ldap.NewBaseObjectSearchRequest(
-		distinguishedName,
-		filter,
-		attrs,
-	)
+	// 根据是否为简单 login 来构造不同的搜索请求
+	if isSimpleLogin {
+		// 如果是简单的 login（如 "wanglei"），需要在搜索树中查找
+		var searchBase string
+		var searchFilter string
+
+		if strings.EqualFold("user", entityType) {
+			searchBase = config.UserSearchBase
+			// 使用 userLoginAttribute 查找用户
+			searchFilter = fmt.Sprintf("(&(%s=%s)(%s=%s))",
+				config.UserLoginAttribute,
+				ldapv3.EscapeFilter(distinguishedName),
+				ObjectClass,
+				ldap.SanitizeAttr(config.UserObjectClass))
+		} else {
+			searchBase = config.GroupSearchBase
+			// 对于组，使用 groupNameAttribute
+			searchFilter = fmt.Sprintf("(&(%s=%s)(%s=%s))",
+				config.GroupNameAttribute,
+				ldapv3.EscapeFilter(distinguishedName),
+				ObjectClass,
+				ldap.SanitizeAttr(config.GroupObjectClass))
+		}
+
+		search = ldapv3.NewSearchRequest(
+			searchBase,
+			ldapv3.ScopeWholeSubtree,
+			ldapv3.NeverDerefAliases,
+			0,
+			0,
+			false,
+			searchFilter,
+			attrs,
+			nil,
+		)
+	} else {
+		// 如果是完整的 DN，使用基础对象搜索（原有逻辑）
+		search = ldap.NewBaseObjectSearchRequest(
+			distinguishedName,
+			filter,
+			attrs,
+		)
+	}
 
 	result, err := lConn.Search(search)
 	if err != nil {
@@ -357,7 +400,9 @@ func (p *ldapProvider) getPrincipal(distinguishedName string, scope string, conf
 		return nil, fmt.Errorf("permission denied")
 	}
 
-	principal, err := ldap.AttributesToPrincipal(entryAttributes, distinguishedName, scope, p.providerName, config.UserObjectClass, config.UserNameAttribute, config.UserLoginAttribute, config.GroupObjectClass, config.GroupNameAttribute)
+	// 使用从 LDAP 返回的实际 DN，而不是传入的 distinguishedName（可能是简单的 login）
+	actualDN := entry.DN
+	principal, err := ldap.AttributesToPrincipal(entryAttributes, actualDN, scope, p.providerName, config.UserObjectClass, config.UserNameAttribute, config.UserLoginAttribute, config.GroupObjectClass, config.GroupNameAttribute)
 	if err != nil {
 		return nil, err
 	}
@@ -543,11 +588,36 @@ func (p *ldapProvider) RefetchGroupPrincipals(principalID string, secret string)
 		return nil, err
 	}
 
-	searchRequest := ldap.NewBaseObjectSearchRequest(
-		distinguishedName,
-		fmt.Sprintf("(%s=%s)", ObjectClass, config.UserObjectClass),
-		config.GetUserSearchAttributes(ObjectClass),
-	)
+	// 检测 distinguishedName 是完整 DN 还是简单的 login
+	var searchRequest *ldapv3.SearchRequest
+	_, parseErr := ldapv3.ParseDN(distinguishedName)
+	if parseErr != nil {
+		// 如果不是有效的 DN，说明是简单的 login（如 "wanglei"），使用子树搜索
+		searchFilter := fmt.Sprintf("(&(%s=%s)(%s=%s))",
+			config.UserLoginAttribute,
+			ldapv3.EscapeFilter(distinguishedName),
+			ObjectClass,
+			ldap.SanitizeAttr(config.UserObjectClass))
+
+		searchRequest = ldapv3.NewSearchRequest(
+			config.UserSearchBase,
+			ldapv3.ScopeWholeSubtree,
+			ldapv3.NeverDerefAliases,
+			0,
+			0,
+			false,
+			searchFilter,
+			config.GetUserSearchAttributes(ObjectClass),
+			nil,
+		)
+	} else {
+		// 如果是完整的 DN，使用基础对象搜索（原有逻辑）
+		searchRequest = ldap.NewBaseObjectSearchRequest(
+			distinguishedName,
+			fmt.Sprintf("(%s=%s)", ObjectClass, config.UserObjectClass),
+			config.GetUserSearchAttributes(ObjectClass),
+		)
+	}
 
 	result, err := lConn.Search(searchRequest)
 	if err != nil {
