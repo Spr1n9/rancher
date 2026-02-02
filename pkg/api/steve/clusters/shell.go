@@ -8,13 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rancher/apiserver/pkg/types"
 	v3 "github.com/rancher/rancher/pkg/generated/controllers/management.cattle.io/v3"
 	"github.com/rancher/rancher/pkg/settings"
 	"github.com/rancher/steve/pkg/podimpersonation"
 	"github.com/rancher/steve/pkg/stores/proxy"
 	"github.com/rancher/wrangler/v3/pkg/schemas/validation"
-	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/authentication/user"
@@ -33,14 +31,14 @@ type shell struct {
 }
 
 func (s *shell) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	apiRequest := types.GetAPIContext(req.Context())
-	clusterID := apiRequest.Name
-	displayName := clusterID
-	if cluster, err := s.clusterCache.Get(clusterID); err == nil && cluster.Spec.DisplayName != "" {
-		displayName = cluster.Spec.DisplayName
-	}
+	// apiRequest := types.GetAPIContext(req.Context())
+	// clusterID := apiRequest.Name
+	// displayName := clusterID
+	// if cluster, err := s.clusterCache.Get(clusterID); err == nil && cluster.Spec.DisplayName != "" {
+	// 	displayName = cluster.Spec.DisplayName
+	// }
 
-	req = req.WithContext(context.WithValue(req.Context(), "clusterName", displayName))
+	// req = req.WithContext(context.WithValue(req.Context(), "clusterName", displayName))
 
 	ctx, user, client, err := s.contextAndClient(req)
 	if err != nil {
@@ -132,18 +130,18 @@ func (s *shell) mountNFS(ctx context.Context, user user.Info, pod *v1.Pod) {
 	mountDir := "/home/shell/persistent_data"
 	volumeName := "persistent-data"
 
-	if clusterName, ok := ctx.Value("clusterName").(string); ok {
-		logrus.Infof("clusterName: %s", clusterName)
-		switch clusterName {
-		case "local":
-			nfsHostIp = settings.ShellDefaultNFSHost.Get()
-		default:
-			nfsHostIp = settings.ShellDefaultNFSHost.Get()
-		}
-	} else {
-		logrus.Errorf("clusterName not found in context")
-		return
-	}
+	// if clusterName, ok := ctx.Value("clusterName").(string); ok {
+	// 	logrus.Infof("clusterName: %s", clusterName)
+	// 	switch clusterName {
+	// 	case "local":
+	// 		nfsHostIp = settings.ShellDefaultNFSHost.Get()
+	// 	default:
+	// 		nfsHostIp = settings.ShellDefaultNFSHost.Get()
+	// 	}
+	// } else {
+	// 	logrus.Errorf("clusterName not found in context")
+	// 	return
+	// }
 
 	// 配置挂载点
 	pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts, v1.VolumeMount{
