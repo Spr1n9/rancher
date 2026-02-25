@@ -172,6 +172,9 @@ func (p *proxy) proxy(req *http.Request) error {
 	destURL.RawQuery = req.URL.RawQuery
 	destURLHostname := destURL.Hostname()
 
+	fmt.Printf("[DEBUG Proxy] Original hostname: %s\n", destURLHostname)
+	logrus.Infof("[Proxy] Original hostname: %s", destURLHostname)
+
 	// Fix for China region domains that incorrectly include .api. in the hostname
 	// This must be done before the isAllowed check
 	// Correct format: ec2.cn-northwest-1.amazonaws.com.cn
@@ -184,11 +187,18 @@ func (p *proxy) proxy(req *http.Request) error {
 		} else {
 			destURL.Host = destURLHostname
 		}
+		fmt.Printf("[DEBUG Proxy] Fixed hostname to: %s\n", destURLHostname)
+		logrus.Infof("[Proxy] Fixed hostname to: %s", destURLHostname)
 	}
 
 	if !p.isAllowed(destURLHostname) {
+		fmt.Printf("[DEBUG Proxy] Host not allowed: %s\n", destURLHostname)
+		logrus.Errorf("[Proxy] Host not allowed: %s", destURLHostname)
 		return fmt.Errorf("invalid host: %v", destURLHostname)
 	}
+
+	fmt.Printf("[DEBUG Proxy] Host allowed, proceeding\n")
+	logrus.Infof("[Proxy] Host allowed, proceeding with request")
 
 	headerCopy := http.Header{}
 
@@ -218,10 +228,12 @@ func (p *proxy) proxy(req *http.Request) error {
 	if auth != "" { // non-empty AuthHeader is noop
 		req.Header.Set(AuthHeader, auth)
 	} else if cAuth != "" {
+		logrus.Infof("[Proxy] Using CattleAuth, calling signer")
 		// setting CattleAuthHeader will replace credential id with secret data
 		// and generate signature
 		signer := newSigner(cAuth)
 		if signer != nil {
+			logrus.Infof("[Proxy] Signer created, calling sign()")
 			return signer.sign(req, p.secretGetter(req, cAuth), cAuth)
 		}
 		req.Header.Set(AuthHeader, cAuth)

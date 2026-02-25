@@ -39,10 +39,12 @@ func (a awsv4) sign(req *http.Request, secrets SecretGetter, auth string) error 
 		return err
 	}
 
+	fmt.Printf("[DEBUG AWS Sign] req.Host=%s, req.URL.Host=%s\n", req.Host, req.URL.Host)
 	logrus.Infof("[AWS Sign] Original req.Host=%s, req.URL.Host=%s, req.URL=%s", req.Host, req.URL.Host, req.URL.String())
 
 	service, region := a.getServiceAndRegion(req.URL.Host)
 
+	fmt.Printf("[DEBUG AWS Sign] service=%s, region=%s\n", service, region)
 	logrus.Infof("[AWS Sign] Resolved service=%s, region=%s", service, region)
 
 	credentialProvider := credentials.NewStaticCredentialsProvider(secret["accessKey"], secret["secretKey"], "")
