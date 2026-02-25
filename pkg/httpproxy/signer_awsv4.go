@@ -15,6 +15,7 @@ import (
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -37,7 +38,13 @@ func (a awsv4) sign(req *http.Request, secrets SecretGetter, auth string) error 
 	if err != nil {
 		return err
 	}
+
+	logrus.Infof("[AWS Sign] Original req.Host=%s, req.URL.Host=%s, req.URL=%s", req.Host, req.URL.Host, req.URL.String())
+
 	service, region := a.getServiceAndRegion(req.URL.Host)
+
+	logrus.Infof("[AWS Sign] Resolved service=%s, region=%s", service, region)
+
 	credentialProvider := credentials.NewStaticCredentialsProvider(secret["accessKey"], secret["secretKey"], "")
 	awsSigner := v4.NewSigner()
 	var body []byte
@@ -63,8 +70,11 @@ func (a awsv4) sign(req *http.Request, secrets SecretGetter, auth string) error 
 	req.Header = newHeader
 	err = awsSigner.SignHTTP(req.Context(), credentialProvider.Value, req, payloadHash, service, region, time.Now())
 	if err != nil {
+		logrus.Errorf("[AWS Sign] SignHTTP failed: %v", err)
 		return err
 	}
+
+	logrus.Infof("[AWS Sign] Signature complete. Authorization header: %s", req.Header.Get("Authorization"))
 
 	// The V2 SDK does not implement internally the sign with body method as per https://github.com/aws/aws-sdk-go/blob/main/aws/signer/v4/v4.go#L357
 	// Therefore we need the below in order for the body to be included with the forwarded request.
@@ -112,6 +122,20 @@ func (a awsv4) getServiceAndRegion(host string) (string, string) {
 			return service, region
 		}
 	}
+
+	// Special handling for China region domains if not resolved by endpoints.DefaultPartitions()
+	// AWS China uses .amazonaws.com.cn domain suffix
+	if strings.Contains(host, ".amazonaws.com.cn") {
+		// Extract service and region manually for China domains
+		parts := strings.Split(host, ".")
+		if len(parts) >= 4 {
+			// Format: service.region.amazonaws.com.cn
+			service = parts[0]
+			region = parts[1]
+			return service, region
+		}
+	}
+
 	if strings.EqualFold(service, "iam") {
 		// This conditional is meant to cover a discrepancy in the IAM service for the China regions.
 		// The following doc states that IAM uses a globally unique endpoint, and the default
