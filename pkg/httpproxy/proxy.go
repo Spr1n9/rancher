@@ -209,6 +209,8 @@ func (p *proxy) proxy(req *http.Request) error {
 	auth := req.Header.Get(APIAuth)
 	cAuth := req.Header.Get(CattleAuth)
 
+	fmt.Printf("[DEBUG Proxy] auth='%s', cAuth='%s'\n", auth, cAuth)
+
 	for key, value := range req.Header {
 		if isBadHeader(key) {
 			continue
@@ -226,17 +228,23 @@ func (p *proxy) proxy(req *http.Request) error {
 	req.Header = headerCopy
 
 	if auth != "" { // non-empty AuthHeader is noop
+		fmt.Printf("[DEBUG Proxy] Using auth header (not CattleAuth)\n")
 		req.Header.Set(AuthHeader, auth)
 	} else if cAuth != "" {
+		fmt.Printf("[DEBUG Proxy] Using CattleAuth, calling signer\n")
 		logrus.Infof("[Proxy] Using CattleAuth, calling signer")
 		// setting CattleAuthHeader will replace credential id with secret data
 		// and generate signature
 		signer := newSigner(cAuth)
 		if signer != nil {
+			fmt.Printf("[DEBUG Proxy] Signer created successfully, calling sign()\n")
 			logrus.Infof("[Proxy] Signer created, calling sign()")
 			return signer.sign(req, p.secretGetter(req, cAuth), cAuth)
 		}
+		fmt.Printf("[DEBUG Proxy] Signer is nil, setting auth header directly\n")
 		req.Header.Set(AuthHeader, cAuth)
+	} else {
+		fmt.Printf("[DEBUG Proxy] No auth or cAuth header found\n")
 	}
 
 	replaceCookies(req)
