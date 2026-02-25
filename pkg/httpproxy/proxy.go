@@ -175,21 +175,9 @@ func (p *proxy) proxy(req *http.Request) error {
 	fmt.Printf("[DEBUG Proxy] Original hostname: %s\n", destURLHostname)
 	logrus.Infof("[Proxy] Original hostname: %s", destURLHostname)
 
-	// Fix for China region domains that incorrectly include .api. in the hostname
-	// This must be done before the isAllowed check
-	// Correct format: ec2.cn-northwest-1.amazonaws.com.cn
-	// Incorrect format: ec2.cn-northwest-1.api.amazonwebservices.com.cn
-	if strings.Contains(destURLHostname, ".api.amazonwebservices.com.cn") {
-		destURLHostname = strings.Replace(destURLHostname, ".api.amazonwebservices.com.cn", ".amazonaws.com.cn", 1)
-		// Update the URL with the corrected hostname, preserving the port if present
-		if destURL.Port() != "" {
-			destURL.Host = destURLHostname + ":" + destURL.Port()
-		} else {
-			destURL.Host = destURLHostname
-		}
-		fmt.Printf("[DEBUG Proxy] Fixed hostname to: %s\n", destURLHostname)
-		logrus.Infof("[Proxy] Fixed hostname to: %s", destURLHostname)
-	}
+	// DO NOT modify China region domains here - they need to match the signature
+	// The incorrect .api.amazonwebservices.com.cn domains are now in the whitelist
+	// and should be resolved via DNS to the correct AWS servers
 
 	if !p.isAllowed(destURLHostname) {
 		fmt.Printf("[DEBUG Proxy] Host not allowed: %s\n", destURLHostname)
