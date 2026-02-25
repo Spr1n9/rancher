@@ -172,6 +172,18 @@ func (p *proxy) proxy(req *http.Request) error {
 	destURL.RawQuery = req.URL.RawQuery
 	destURLHostname := destURL.Hostname()
 
+	// Fix for China region domains that incorrectly include .api. in the hostname
+	// This must be done before the isAllowed check
+	if strings.Contains(destURLHostname, ".api.amazonwebservices.com.cn") {
+		destURLHostname = strings.Replace(destURLHostname, ".api.amazonwebservices.com.cn", ".amazonwebservices.com.cn", 1)
+		// Update the URL with the corrected hostname, preserving the port if present
+		if destURL.Port() != "" {
+			destURL.Host = destURLHostname + ":" + destURL.Port()
+		} else {
+			destURL.Host = destURLHostname
+		}
+	}
+
 	if !p.isAllowed(destURLHostname) {
 		return fmt.Errorf("invalid host: %v", destURLHostname)
 	}
