@@ -11,6 +11,11 @@ var TestCases = []struct{ host, service, region string }{
 	{"ec2.us-west-2.amazonaws.com", "ec2", "us-west-2"},
 	{"eks.eu-central-1.amazonaws.com", "eks", "eu-central-1"},
 	{"iam.amazonaws.com", "iam", "us-east-1"},
+	// China region tests - should handle both correct and incorrect formats
+	{"ec2.cn-northwest-1.amazonwebservices.com.cn", "ec2", "cn-northwest-1"},
+	{"ec2.cn-northwest-1.api.amazonwebservices.com.cn", "ec2", "cn-northwest-1"},
+	{"ec2.cn-north-1.amazonwebservices.com.cn", "ec2", "cn-north-1"},
+	{"ec2.cn-north-1.api.amazonwebservices.com.cn", "ec2", "cn-north-1"},
 }
 
 func TestGetServiceAndRegion(t *testing.T) {

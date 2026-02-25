@@ -5,7 +5,11 @@
       "Bash(go doc:*)",
       "Bash(go test:*)",
       "Bash(go build:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(git log:*)",
+      "Bash(find:*)",
+      "Bash(go list:*)",
+      "Bash(go run:*)"
     ]
   }
 }

@@ -87,6 +87,13 @@ func (a awsv4) sign(req *http.Request, secrets SecretGetter, auth string) error 
 }
 
 func (a awsv4) getServiceAndRegion(host string) (string, string) {
+	// Fix for China region domains that incorrectly include .api. in the hostname
+	// Correct format: ec2.cn-northwest-1.amazonwebservices.com.cn
+	// Incorrect format: ec2.cn-northwest-1.api.amazonwebservices.com.cn
+	if strings.Contains(host, ".api.amazonwebservices.com.cn") {
+		host = strings.Replace(host, ".api.amazonwebservices.com.cn", ".amazonwebservices.com.cn", 1)
+	}
+
 	service := ""
 	region := ""
 	for _, partition := range endpoints.DefaultPartitions() {
