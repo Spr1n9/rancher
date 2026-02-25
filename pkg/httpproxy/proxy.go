@@ -174,8 +174,10 @@ func (p *proxy) proxy(req *http.Request) error {
 
 	// Fix for China region domains that incorrectly include .api. in the hostname
 	// This must be done before the isAllowed check
+	// Correct format: ec2.cn-northwest-1.amazonaws.com.cn
+	// Incorrect format: ec2.cn-northwest-1.api.amazonwebservices.com.cn
 	if strings.Contains(destURLHostname, ".api.amazonwebservices.com.cn") {
-		destURLHostname = strings.Replace(destURLHostname, ".api.amazonwebservices.com.cn", ".amazonwebservices.com.cn", 1)
+		destURLHostname = strings.Replace(destURLHostname, ".api.amazonwebservices.com.cn", ".amazonaws.com.cn", 1)
 		// Update the URL with the corrected hostname, preserving the port if present
 		if destURL.Port() != "" {
 			destURL.Host = destURLHostname + ":" + destURL.Port()
